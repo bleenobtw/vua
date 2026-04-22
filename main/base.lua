@@ -94,8 +94,10 @@ function CBaseValidator:refine(fn, message)
   return self
 end
 
-return CBaseValidator, function(baseType, checkFn)
-  return setmetatable({
+return {
+  CBaseValidator, 
+  function(baseType, checkFn)
+    return setmetatable({
     __type = baseType,
     __check = checkFn,
 
@@ -108,4 +110,5 @@ return CBaseValidator, function(baseType, checkFn)
     __hasDefault = false,
     __label = baseType
   }, CBaseValidator)
-end
+  end
+}

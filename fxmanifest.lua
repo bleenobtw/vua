@@ -8,6 +8,8 @@ game "gta5"
 
 shared_script "@ox_lib/init.lua"
 files {
+  "main/base.lua",
+  "main/string.lua",
   "main/validate.lua",
 }
 
