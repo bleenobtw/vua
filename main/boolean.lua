@@ -1,3 +1,5 @@
+local _, newValidator = table.unpack(require "main.base")
+
 return function()
   return newValidator("boolean", function(value, path)
     if type(value) ~= "boolean" then
