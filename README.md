@@ -3,7 +3,7 @@ A lightweight, chainable, Zod-inspired runtime validation library for FiveM Lua 
 
 ### Why Vua?
 
-> FiveM server events can't be trusted. Any client can send arbitrary data to your server. Without validation, you expose yourself to exploits, crashes and injection attacks. Vua gives you a clean and predictable API to guard every event handler with minimal overhead.
+> Events & NUI callbacks can't be trusted. Any client can send arbitrary data to your server without validation. You expose yourself to exploits, crashes and injection attacks. Vua gives you a clean and predictable API to guard every handler with minimal overhead.
 
 ### Example(s)
 ```lua
