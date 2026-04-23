@@ -7,6 +7,8 @@ local newTable = require "main.table"
 local newLiteral = require "main.literal"
 local newEnum = require "main.enum"
 
+local newObject = require "main.object"
+
 return {
   -- primitives (string, number, boolean, function, table, any?, never?)
   string = newString,
@@ -20,6 +22,7 @@ return {
   enum = newEnum,
 
   -- composites (object, array, record, tuple)
+  object = newObject,
 
   -- logic (union, intersection, lazy?)
 }
