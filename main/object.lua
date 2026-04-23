@@ -67,13 +67,13 @@ end
 function CObjectValidator:strict()
   local previous = self.__check
   self.__check = function(value, path)
-    if type(value) ~= table then
-      return false, ("[%s] expected object (table), got %s"):format(path, type(value))
+    if type(value) ~= "table" then
+      return false, ("[%s] expected object (table), got %s"):format(pathToString(path), tostring(key))
     end
 
     for key in pairs(value) do
       if self.__schema[key] == nil then
-        return false, ("[%s] unknown key '%s' (strict mode)"):format(path, tostring(key))
+        return false, ("[%s] unknown key '%s' (strict mode)"):format(pathToString(path), tostring(key))
       end
     end
     return previous(value, path)

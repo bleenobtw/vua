@@ -1,4 +1,5 @@
 local CBaseValidator, newValidator = table.unpack(require "main.base")
+local helpers = require "main.helpers"
 
 local CStringValidator = setmetatable({}, { __index = CBaseValidator })
 CStringValidator.__index = CStringValidator
@@ -9,7 +10,7 @@ CStringValidator.__index = CStringValidator
 function CStringValidator:min(n, message)
   table.insert(self.__refinements, function(value, path)
     if #value < n then
-      return false, message or ("[%s] string must be at least %d character(s), got %d"):format(path, n, #value)
+      return false, message or ("[%s] string must be at least %d character(s), got %d"):format(helpers.pathToString(path), n, #value)
     end
     return true, value
   end)
@@ -22,7 +23,7 @@ end
 function CStringValidator:max(n, message)
   table.insert(self.__refinements, function(value, path)
     if #value > n then
-      return false, message or ("[%s] string must be at most %d character(s), got %d"):format(path, n, #value)
+      return false, message or ("[%s] string must be at most %d character(s), got %d"):format(helpers.pathToString(path), n, #value)
     end
     return true, value
   end)
@@ -35,7 +36,7 @@ end
 function CStringValidator:length(n, message)
   table.insert(self.__refinements, function(value, path)
     if #value ~= n then
-      return false, message or ("[%s] string must be exactly %d character(s), got %d"):format(path, n, #value)
+      return false, message or ("[%s] string must be exactly %d character(s), got %d"):format(helpers.pathToString(path), n, #value)
     end
     return true, value
   end)
@@ -74,7 +75,7 @@ end
 function CStringValidator:startsWith(prefix, message)
   table.insert(self.__refinements, function(value, path)
     if value:sub(1, #prefix) ~= prefix then
-      return false, message or ("[%s] string must start with '%s'"):format(path, prefix)
+      return false, message or ("[%s] string must start with '%s'"):format(helpers.pathToString(path), prefix)
     end
     return true, value
   end)
@@ -87,7 +88,7 @@ end
 function CStringValidator:endsWith(suffix, message)
   table.insert(self.__refinements, function(value, path)
     if value:sub(-#suffix) ~= suffix then
-      return false, message or ("[%s] string must end with '%s'"):format(path, suffix)
+      return false, message or ("[%s] string must end with '%s'"):format(helpers.pathToString(path), suffix)
     end
     return true, value
   end)
@@ -100,7 +101,7 @@ end
 function CStringValidator:includes(subString, message)
   table.insert(self.__refinements, function(value, path)
     if not value:find(subString, 1, true) then
-      return false, ("[%s] string must include '%s'"):format(path, subString)
+      return false, ("[%s] string must include '%s'"):format(helpers.pathToString(path), subString)
     end
     return true, value
   end)
@@ -111,7 +112,7 @@ return function()
   return setmetatable(
     newValidator("string", function(value, path)
       if type(value) ~= "string" then
-        return false, ("[%s] expected string, got %s"):format(path, type(value))
+        return false, ("[%s] expected string, got %s"):format(helpers.pathToString(path), type(value))
       end
       return true, value
     end)

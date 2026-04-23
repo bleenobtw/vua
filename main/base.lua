@@ -1,9 +1,11 @@
 local CBaseValidator = {}
 CBaseValidator.__index = CBaseValidator
 
+local helpers = require "main.helpers"
+
 -- Generic parsing.
 function CBaseValidator:parse(value, path)
-  path = path or value
+  if path == nil then path = {} elseif type(path) ~= "table" then path = { path } end
 
   -- handle nil
   if value == nil then
@@ -16,7 +18,7 @@ function CBaseValidator:parse(value, path)
     end
 
     if value == nil then
-      return false, ("[%s] expected %s, got nil"):format(path, self.__label)
+      return false, ("[%s] expected %s, got nil"):format(helpers.pathToString(path), self.__label)
     end
   end
 
@@ -87,7 +89,7 @@ function CBaseValidator:refine(fn, message)
     local ok, customErr = fn(value)
 
     if not ok then
-      return false, ("[%s] %s"):format(path, customErr or message or "custom validation failed")
+      return false, ("[%s] %s"):format(helpers.pathToString(path), customErr or message or "custom validation failed")
     end
     return true, value
   end)
