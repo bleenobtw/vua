@@ -5,9 +5,9 @@ local stringSchema = v
   .string()
   :min(4)
   :max(8)
-  :startsWith("Doe")
-  :endsWith("123")
-  :includes("e123")
+  :startsWith("Doe", "String was must start with Doe")
+  :endsWith("123", "String must end with 123")
+  :includes("e123", "String must include e123")
 
 local function stringTestCase(values)
   for i = 1, #values do
