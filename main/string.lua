@@ -30,6 +30,10 @@ function CStringValidator:max(n, message)
   return self
 end
 
+function CStringValidator:nonEmpty(message)
+  return self:min(1, message)
+end
+
 --- Ensures that the value is exactly n characters long.
 ---@param n number
 ---@param message string # The message to return if this validator fails.

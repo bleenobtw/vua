@@ -82,7 +82,7 @@ print(ok, json.encode(player))
 
 -- nested objects
 local vehicleSchema = v.object({
-  model = v.string():nonempty(),
+  model = v.string():nonEmpty("The model string can't be empty"),
   plate = v.string():length(8):upper(),
   owner = v.object({
     id   = v.number():int():positive(),
