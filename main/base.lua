@@ -3,41 +3,27 @@ CBaseValidator.__index = CBaseValidator
 
 local helpers = require "main.helpers"
 
--- Generic parsing.
 function CBaseValidator:parse(value, path)
   if path == nil then path = {} elseif type(path) ~= "table" then path = { path } end
 
-  -- handle nil
   if value == nil then
-    if self.__hasDefault then
-      value = self.__default
-    end
-
-    if value == nil and (self.__optional or self.__nullable) then
-      return true, nil
-    end
-
+    if self.__hasDefault then value = self.__default end
+    if value == nil and (self.__optional or self.__nullable) then return true, nil end
     if value == nil then
       return false, ("[%s] expected %s, got nil"):format(helpers.pathToString(path), self.__label)
     end
   end
 
-  -- nullable allows nil (handled above) or the base type
-  if 
-    value == nil 
-    and self.__nullable
-  then
-    return true, nil
-  end
+  if value == nil and self.__nullable then return true, nil end
 
-  -- base type check.
-  local ok, err = self.__check(value, path)
-  if not ok then return false, err end
+  local ok, result = self.__check(value, path)
+  if not ok then return false, result end
+  value = result  -- ← use the processed result (the `out` table for objects)
 
-  -- handle refinements
   for _, ref in ipairs(self.__refinements) do
-    local refOk, refErr = ref(value, path)
-    if not refOk then return false, refErr end
+    local refOk, refResult = ref(value, path)
+    if not refOk then return false, refResult end
+    value = refResult  -- ← pick up transforms like .upper(), .trim()
   end
 
   return true, value
