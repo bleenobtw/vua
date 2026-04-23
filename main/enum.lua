@@ -7,7 +7,7 @@ return function(values)
   
   local self = newValidator(("enum(%s)"):format(joined), function(value, path)
     if not lookup[value] then
-      return false, ("[%s] expected one of [%s], got '%s'", path, joined, tostring(value))
+      return false, ("[%s] expected one of [%s], got '%s'"):format(path, joined, tostring(value))
     end
     return true, value
   end)
