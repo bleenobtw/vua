@@ -18,3 +18,24 @@ end
 
 stringTestCase({"", "asd", "Jogn", "Doe123", "Martin", "Doe321"})
 -- String Validation Tests End
+
+-- Number Validation Tests Start
+
+local numberSchema = v
+  .number()
+  :min(4)
+  :max(16)
+  :int()
+  :gt(3)
+
+
+local function numberTestCase(values)
+  for i = 1, #values do
+    local ok, results = numberSchema:parse(values[i])
+    print("Test Case #" .. i, ok, results)
+  end
+end
+
+numberTestCase({4, 2, 69, 5.5, 23, 43.2, 6, 7, 2.34})
+
+-- Number Validation Tests End
