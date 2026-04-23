@@ -8,6 +8,12 @@ local newLiteral = require "main.literal"
 local newEnum = require "main.enum"
 
 local newObject = require "main.object"
+local newArray = require "main.array"
+
+local newUnion = require "main.union"
+local newIntersection = require "main.intersection"
+
+local newLazy = require "main.lazy"
 
 return {
   -- primitives (string, number, boolean, function, table, any?, never?)
@@ -23,6 +29,11 @@ return {
 
   -- composites (object, array, record, tuple)
   object = newObject,
+  array = newArray,
 
   -- logic (union, intersection, lazy?)
+  union = newUnion,
+  intersection = newIntersection,
+
+  lazy = newLazy,
 }

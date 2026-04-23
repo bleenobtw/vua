@@ -52,3 +52,48 @@ local characterSchema = v
 local ok, results = characterSchema:parse({ firstName = "John", age = 4, alive = true })
 print(ok, results)
 -- Object Validation Tests End
+
+-- literals & enums
+
+local trueOnly = v.literal(true)
+local roleSchema = v.enum({"admin", "moderator", "user", "banned"})
+local jobSchema = v.enum({"police", "medical", "mechanic", "civilian"})
+
+print(roleSchema:parse("admin")) -- true admin
+print(roleSchema:parse("hacker")) -- false [] expected one of [admin | moderator | user | banned]
+print(jobSchema:parse("medical")) -- true ems
+
+-- objects
+
+local playerSchema = v
+  .object({
+    name = v.string():min(1):max(32),
+    age = v.number():int():min(12):max(120):optional(),
+    role = v.enum({"admin", "user", "moderator"}),
+    isOnline = v.boolean():default(false)
+  })
+
+local ok, player = playerSchema:parse({
+  name = "Martin",
+  role = "user"
+})
+
+print(ok, json.encode(player))
+
+-- nested objects
+local vehicleSchema = v.object({
+  model = v.string():nonempty(),
+  plate = v.string():length(8):upper(),
+  owner = v.object({
+    id   = v.number():int():positive(),
+    name = v.string():min(1),
+  }),
+  mods  = v.object({
+    wheels = v.number():int():between(0, 5):optional(),
+    tint   = v.number():int():between(0, 4):optional(),
+  }):optional(),
+})
+
+-- pick() / omit() — derive sub-schemas
+local publicPlayerSchema = playerSchema:pick({"name", "role"})
+local noRoleSchema       = playerSchema:omit({"role"})
