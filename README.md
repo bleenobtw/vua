@@ -18,4 +18,6 @@ print(ok, results) -- true John
 
 local ok2, _error = nameSchema:parse(42)
 print(ok2, _error) -- false [42] expected string, got number
+
+-- * See main/__tests.lua for more examples.
 ```
