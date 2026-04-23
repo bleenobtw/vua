@@ -39,3 +39,16 @@ end
 numberTestCase({4, 2, 69, 5.5, 23, 43.2, 6, 7, 2.34})
 
 -- Number Validation Tests End
+
+-- Object Validation Tests Start
+
+local characterSchema = v
+  .object({ 
+    firstName = v.string():includes("John"),
+    age = v.number():min(6),
+    alive = v.boolean()
+   })
+
+local ok, results = characterSchema:parse({ firstName = "John", age = 4, alive = true })
+print(ok, results)
+-- Object Validation Tests End
