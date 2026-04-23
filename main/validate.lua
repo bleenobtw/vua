@@ -1,6 +1,7 @@
 local newString = require "main.string"
 local newNumber = require "main.number"
 local newBoolean = require "main.boolean"
+local newFunction = require "main.function"
 
 local newLiteral = require "main.literal"
 local newEnum = require "main.enum"
@@ -10,6 +11,7 @@ return {
   string = newString,
   number = newNumber,
   boolean = newBoolean,
+  func = newFunction,
 
   -- values (literal, enum)
   literal = newLiteral,
