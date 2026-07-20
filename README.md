@@ -114,6 +114,8 @@ Every schema supports `optional`, `nullable`, `default`, `label`, and `refine`.
 Objects preserve unknown keys by default. Call `strict` to reject them.
 Schema methods return a new schema, so a base schema can be safely reused in multiple chains.
 
+Arrays must be dense, 1-based tables with no non-integer keys. Objects reject non-empty array-shaped tables; use `table()` when either table shape is valid.
+
 ## Development
 
 The test suite has no external Lua dependencies:

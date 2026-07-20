@@ -18,7 +18,32 @@ local function extendPath(path, key)
   return extended
 end
 
+local function arrayLength(value)
+  local count = 0
+  local highest = 0
+
+  for key in pairs(value) do
+    if type(key) ~= "number" or key < 1 or key % 1 ~= 0 then
+      return nil, "key"
+    end
+
+    count = count + 1
+    if key > highest then highest = key end
+  end
+
+  if highest ~= count then return nil, "sparse" end
+  return count
+end
+
+local function assertValidator(value, name)
+  if type(value) ~= "table" or type(value.parse) ~= "function" then
+    error(("%s must be a schema"):format(name), 3)
+  end
+end
+
 return {
   pathToString = pathToString,
   extendPath = extendPath,
+  arrayLength = arrayLength,
+  assertValidator = assertValidator,
 }
