@@ -6,6 +6,13 @@ local CObjectValidator = setmetatable({}, { __index = CBaseValidator })
 CObjectValidator.__index = CObjectValidator
 
 local function newObject(schema, opts)
+  if type(schema) ~= "table" then error("object shape must be a table", 3) end
+
+  for key, validator in pairs(schema) do
+    if type(key) ~= "string" then error("object shape keys must be strings", 3) end
+    helpers.assertValidator(validator, ("object field '%s'"):format(key))
+  end
+
   opts = opts or {}
   local strict = opts.strict or false
 
@@ -13,6 +20,11 @@ local function newObject(schema, opts)
     if type(value) ~= "table" then
       return false, ("[%s] expected object (table), got %s")
         :format(helpers.pathToString(path), type(value))
+    end
+
+    local length = helpers.arrayLength(value)
+    if length and length > 0 then
+      return false, ("[%s] expected object, got array"):format(helpers.pathToString(path))
     end
 
     -- strict mode, reject unknown keys
@@ -53,6 +65,11 @@ function CObjectValidator:strict()
   clone.__check = function(value, path)
     if type(value) ~= "table" then
       return false, ("[%s] expected object (table), got %s"):format(helpers.pathToString(path), type(value))
+    end
+
+    local length = helpers.arrayLength(value)
+    if length and length > 0 then
+      return false, ("[%s] expected object, got array"):format(helpers.pathToString(path))
     end
 
     for key in pairs(value) do

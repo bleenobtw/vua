@@ -136,6 +136,7 @@ test("literal and enum validators", function()
   rejects(v.literal(true), false, "[<root>] expected literal true, got false")
   parses(v.enum({"admin", "user"}), "admin", "admin")
   rejects(v.enum({"admin", "user"}), "guest", "[<root>] expected one of [admin | user], got 'guest'")
+  parses(v.enum({true, false}), false, false)
 end)
 
 test("objects parse fields and preserve unknown keys", function()
@@ -191,6 +192,40 @@ test("array validators", function()
   rejects(v.array(v.number()), {1, "two"}, "[2] expected number, got string")
   rejects(v.array(v.number()):nonEmpty(), {}, "[<root>] array must have at least 1 element(s), got 0")
   rejects(v.array(v.number()):length(2), {1}, "[<root>] array must have exactly 2 element(s), got 1")
+end)
+
+test("arrays must be dense and use integer keys", function()
+  rejects(v.array(v.number()), { [1] = 1, [3] = 3 }, "[<root>] array must not contain gaps")
+  rejects(v.array(v.number()), { value = 1 }, "[<root>] expected array, got table with non-array keys")
+  rejects(v.array(v.number()), { [0] = 1 }, "[<root>] expected array, got table with non-array keys")
+end)
+
+test("objects and raw tables have distinct semantics", function()
+  rejects(v.object({ value = v.number() }), {1}, "[<root>] expected object, got array")
+  parses(v.object({ value = v.number() }), { value = 1 }, { value = 1 })
+  parses(v.table(), {1, 2}, {1, 2})
+end)
+
+test("schema constructors reject invalid arguments", function()
+  local invalid = {
+    function() v.array("number") end,
+    function() v.object("shape") end,
+    function() v.object({ value = "number" }) end,
+    function() v.object({ [1] = v.number() }) end,
+    function() v.union({}) end,
+    function() v.union({ [1] = v.string(), [3] = v.number() }) end,
+    function() v.union({v.string(), "number"}) end,
+    function() v.enum({}) end,
+    function() v.enum({ [2] = "user" }) end,
+    function() v.intersection(v.string(), "number") end,
+    function() v.lazy("schema") end,
+    function() v.lazy(function() return "schema" end):parse(1) end,
+  }
+
+  for _, fn in ipairs(invalid) do
+    local ok = pcall(fn)
+    equal(ok, false)
+  end
 end)
 
 test("unions", function()

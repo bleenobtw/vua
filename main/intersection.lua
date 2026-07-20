@@ -1,7 +1,11 @@
 local base = require "main.base"
 local _, newValidator = table.unpack(base)
+local helpers = require "main.helpers"
 
 return function(a, b)
+  helpers.assertValidator(a, "left intersection value")
+  helpers.assertValidator(b, "right intersection value")
+
   return newValidator("intersection", function(value, path)
     local okA, resultsA = a:parse(value, path)
     if not okA then return false, resultsA end
@@ -9,7 +13,7 @@ return function(a, b)
     local okB, resultsB = b:parse(value, path)
     if not okB then return false, resultsB end
 
-    if type(resultsA) == "table" and type(resultsB) == "table" then
+    if a.__type == "object" and b.__type == "object" then
       local mergedResults = {}
       for key, value in pairs(resultsA) do mergedResults[key] = value end
       for key, value in pairs(resultsB) do mergedResults[key] = value end

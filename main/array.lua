@@ -40,14 +40,24 @@ function CArrayValidator:nonEmpty(message)
 end
 
 return function(itemValidator)
+  helpers.assertValidator(itemValidator, "array item")
+
   return setmetatable(
     newValidator("array", function(value, path)
       if type(value) ~= "table" then
         return false, ("[%s] expected array (table), got %s"):format(helpers.pathToString(path), type(value))
       end
 
+      local length, reason = helpers.arrayLength(value)
+      if reason == "key" then
+        return false, ("[%s] expected array, got table with non-array keys"):format(helpers.pathToString(path))
+      elseif reason == "sparse" then
+        return false, ("[%s] array must not contain gaps"):format(helpers.pathToString(path))
+      end
+
       local outResults = {}
-      for j, item in ipairs(value) do
+      for j = 1, length do
+        local item = value[j]
         local itemPath = helpers.extendPath(path, j)
         local ok, result = itemValidator:parse(item, itemPath)
 
