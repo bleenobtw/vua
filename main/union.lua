@@ -19,12 +19,17 @@ return function(validators)
   local joined = table.concat(labels, " | ")
 
   local self = newValidator(("union(%s)"):format(joined), function(value, path)
+    local unionErrors = {}
     for _, validator in ipairs(validators) do
-      local ok, results = validator:parse(value, path)
+      local ok, results = validator:_parse(value, path, false)
 
       if ok then return true, results end
+      unionErrors[#unionErrors + 1] = results
     end
-    return false, ("[%s] value matched none of [%s]"):format(helpers.pathToString(path), joined)
+
+    local unionIssue = helpers.issue(path, "invalid_union", ("value matched none of [%s]"):format(joined), joined, type(value))
+    unionIssue.unionErrors = unionErrors
+    return false, unionIssue
   end)
   self.__label = joined
   return self

@@ -5,8 +5,7 @@ local helpers = require "main.helpers"
 return function()
   return newValidator("boolean", function(value, path)
     if type(value) ~= "boolean" then
-      return false, ("[%s] expected boolean, got %s")
-        :format(helpers.pathToString(path), type(value))
+      return false, helpers.issue(path, "invalid_type", ("expected boolean, got %s"):format(type(value)), "boolean", type(value))
     end
     return true, value
   end)

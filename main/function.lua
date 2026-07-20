@@ -5,7 +5,7 @@ local helpers = require "main.helpers"
 return function()
   return newValidator("function", function(value, path)
     if type(value) ~= "function" then
-      return false, ("[%s] expected function, got %s"):format(helpers.pathToString(path), type(value))
+      return false, helpers.issue(path, "invalid_type", ("expected function, got %s"):format(type(value)), "function", type(value))
     end
     return true, value
   end)

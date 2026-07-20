@@ -36,9 +36,38 @@ local function arrayLength(value)
 end
 
 local function assertValidator(value, name)
-  if type(value) ~= "table" or type(value.parse) ~= "function" then
+  if type(value) ~= "table" or type(value.parse) ~= "function" or type(value._parse) ~= "function" then
     error(("%s must be a schema"):format(name), 3)
   end
+end
+
+local function copyPath(path)
+  if type(path) ~= "table" then return path and { tostring(path) } or {} end
+
+  local copy = {}
+  for i = 1, #path do copy[i] = path[i] end
+  return copy
+end
+
+local function issue(path, code, message, expected, received)
+  local value = {
+    path = copyPath(path),
+    code = code,
+    message = message,
+  }
+
+  if expected ~= nil then value.expected = expected end
+  if received ~= nil then value.received = received end
+  return value
+end
+
+local function issues(value)
+  if value.code then return { value } end
+  return value
+end
+
+local function formatIssue(value)
+  return ("[%s] %s"):format(pathToString(value.path), value.message)
 end
 
 return {
@@ -46,4 +75,7 @@ return {
   extendPath = extendPath,
   arrayLength = arrayLength,
   assertValidator = assertValidator,
+  issue = issue,
+  issues = issues,
+  formatIssue = formatIssue,
 }

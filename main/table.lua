@@ -5,7 +5,7 @@ local helpers = require "main.helpers"
 return function()
   return newValidator("table", function(value, path)
     if type(value) ~= "table" then
-      return false, ("[%s] expected table, got %s"):format(helpers.pathToString(path), type(value))
+      return false, helpers.issue(path, "invalid_type", ("expected table, got %s"):format(type(value)), "table", type(value))
     end
     return true, value
   end)

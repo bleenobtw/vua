@@ -69,7 +69,7 @@ test("string refinements", function()
   parses(schema, "vuavua", "vuavua")
   rejects(v.string():nonEmpty(), "", "[<root>] string must be at least 1 character(s), got 0")
   rejects(v.string():length(3), "four", "[<root>] string must be exactly 3 character(s), got 4")
-  rejects(v.string():includes("x", "missing x"), "vua", "missing x")
+  rejects(v.string():includes("x", "missing x"), "vua", "[<root>] missing x")
 end)
 
 test("string transforms run in chain order", function()
@@ -100,12 +100,49 @@ test("safeParse and assert", function()
   equal(v.number():safeParse("5"), {
     success = false,
     error = "[<root>] expected number, got string",
+    issues = {{
+      path = {},
+      code = "invalid_type",
+      message = "expected number, got string",
+      expected = "number",
+      received = "string",
+    }},
   })
 
   equal(v.string():assert("vua"), "vua")
   local ok, message = pcall(function() v.string():assert(4) end)
   equal(ok, false)
   assert(message:find("[<root>] expected string, got number", 1, true))
+end)
+
+test("safeParse collects structured child issues", function()
+  local result = v.object({
+    age = v.number(),
+    name = v.string(),
+  }):safeParse({ age = "old", name = false })
+
+  equal(result.success, false)
+  equal(result.error, "[age] expected number, got string")
+  equal(result.issues, {
+    {
+      path = {"age"},
+      code = "invalid_type",
+      message = "expected number, got string",
+      expected = "number",
+      received = "string",
+    },
+    {
+      path = {"name"},
+      code = "invalid_type",
+      message = "expected string, got boolean",
+      expected = "string",
+      received = "boolean",
+    },
+  })
+
+  local arrayResult = v.array(v.number()):safeParse({"one", "two"})
+  equal(#arrayResult.issues, 2)
+  equal(arrayResult.issues[2].path, {"2"})
 end)
 
 test("labels and custom refinements", function()

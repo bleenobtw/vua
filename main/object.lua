@@ -5,6 +5,66 @@ local helpers = require "main.helpers"
 local CObjectValidator = setmetatable({}, { __index = CBaseValidator })
 CObjectValidator.__index = CObjectValidator
 
+local function sortedKeys(value)
+  local keys = {}
+  for key in pairs(value) do keys[#keys + 1] = key end
+  table.sort(keys, function(a, b)
+    local left = tostring(a)
+    local right = tostring(b)
+    if left == right then return type(a) < type(b) end
+    return left < right
+  end)
+  return keys
+end
+
+local function objectCheck(schema, strict)
+  return function(value, path, collect)
+    if type(value) ~= "table" then
+      return false, helpers.issue(path, "invalid_type", ("expected object (table), got %s"):format(type(value)), "object", type(value))
+    end
+
+    local length = helpers.arrayLength(value)
+    if length and length > 0 then
+      return false, helpers.issue(path, "invalid_type", "expected object, got array", "object", "array")
+    end
+
+    local errors = {}
+
+    if strict then
+      for _, key in ipairs(sortedKeys(value)) do
+        if schema[key] == nil then
+          local fieldIssue = helpers.issue(path, "unrecognized_key", ("unknown key '%s' (strict mode)"):format(tostring(key)), "known key", key)
+          if not collect then return false, fieldIssue end
+          errors[#errors + 1] = fieldIssue
+        end
+      end
+    end
+
+    local out = {}
+    for _, key in ipairs(sortedKeys(schema)) do
+      local fieldPath = helpers.extendPath(path, key)
+      local ok, result = schema[key]:_parse(value[key], fieldPath, collect)
+
+      if not ok then
+        if not collect then return false, result end
+        for _, fieldIssue in ipairs(result) do errors[#errors + 1] = fieldIssue end
+      elseif result ~= nil then
+        out[key] = result
+      end
+    end
+
+    if #errors > 0 then return false, errors end
+
+    if not strict then
+      for key, fieldValue in pairs(value) do
+        if schema[key] == nil then out[key] = fieldValue end
+      end
+    end
+
+    return true, out
+  end
+end
+
 local function newObject(schema, opts)
   if type(schema) ~= "table" then error("object shape must be a table", 3) end
 
@@ -15,70 +75,16 @@ local function newObject(schema, opts)
 
   opts = opts or {}
   local strict = opts.strict or false
-
-  local self = newValidator("object", function(value, path)
-    if type(value) ~= "table" then
-      return false, ("[%s] expected object (table), got %s")
-        :format(helpers.pathToString(path), type(value))
-    end
-
-    local length = helpers.arrayLength(value)
-    if length and length > 0 then
-      return false, ("[%s] expected object, got array"):format(helpers.pathToString(path))
-    end
-
-    -- strict mode, reject unknown keys
-    if strict then
-      for key in pairs(value) do
-        if schema[key] == nil then
-          return false, ("[%s] unknown key '%s' (strict mode)"):format(helpers.pathToString(path), tostring(key))
-        end
-      end
-    end
-
-    local out = {}
-    for key, validator in pairs(schema) do
-      local fieldPath = helpers.extendPath(path, key)
-      local ok, results = validator:parse(value[key], fieldPath)
-
-      if not ok then return false, results end
-      if results ~= nil then out[key] = results end
-    end
-
-    if not strict then
-      for key, _value in pairs(value) do
-        if schema[key] == nil then out[key] = _value end
-      end
-    end
-
-    return true, out
-  end)
+  local self = newValidator("object", objectCheck(schema, strict))
   self.__schema = schema
+  self.__strict = strict
   return setmetatable(self, CObjectValidator)
 end
 
 function CObjectValidator:strict()
   local clone = self:_clone()
-  local previous = clone.__check
-  local schema = clone.__schema
-
-  clone.__check = function(value, path)
-    if type(value) ~= "table" then
-      return false, ("[%s] expected object (table), got %s"):format(helpers.pathToString(path), type(value))
-    end
-
-    local length = helpers.arrayLength(value)
-    if length and length > 0 then
-      return false, ("[%s] expected object, got array"):format(helpers.pathToString(path))
-    end
-
-    for key in pairs(value) do
-      if schema[key] == nil then
-        return false, ("[%s] unknown key '%s' (strict mode)"):format(helpers.pathToString(path), tostring(key))
-      end
-    end
-    return previous(value, path)
-  end
+  clone.__strict = true
+  clone.__check = objectCheck(clone.__schema, true)
   return clone
 end
 
@@ -103,9 +109,7 @@ function CObjectValidator:omit(keys)
 
   local subKeys = {}
   for key, value in pairs(self.__schema) do
-    if not exclude[key] then
-      subKeys[key] = value
-    end
+    if not exclude[key] then subKeys[key] = value end
   end
   return newObject(subKeys)
 end
