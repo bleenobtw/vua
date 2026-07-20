@@ -23,5 +23,6 @@ return function(values)
     return true, value
   end)
   self.__label = joined
+  self.__values = values
   return self
 end

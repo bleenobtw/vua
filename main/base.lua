@@ -6,6 +6,8 @@ local helpers = require "main.helpers"
 function CBaseValidator:_parse(value, path, collect)
   if path == nil then path = {} elseif type(path) ~= "table" then path = { path } end
 
+  for _, preprocess in ipairs(self.__preprocessors) do value = preprocess(value) end
+
   if value == nil then
     if self.__hasDefault then value = self.__default end
     if value == nil and (self.__optional or self.__nullable) then return true, nil end
@@ -63,10 +65,10 @@ function CBaseValidator:_clone()
   local clone = {}
 
   for key, value in pairs(self) do
-    if key == "__refinements" then
-      local refinements = {}
-      for i = 1, #value do refinements[i] = value[i] end
-      clone[key] = refinements
+    if key == "__refinements" or key == "__preprocessors" then
+      local values = {}
+      for i = 1, #value do values[i] = value[i] end
+      clone[key] = values
     else
       clone[key] = value
     end
@@ -79,6 +81,20 @@ function CBaseValidator:_addRefinement(refinement)
   local clone = self:_clone()
   table.insert(clone.__refinements, refinement)
   return clone
+end
+
+function CBaseValidator:preprocess(fn)
+  if type(fn) ~= "function" then error("preprocessor must be a function", 2) end
+  local clone = self:_clone()
+  table.insert(clone.__preprocessors, fn)
+  return clone
+end
+
+function CBaseValidator:transform(fn)
+  if type(fn) ~= "function" then error("transform must be a function", 2) end
+  return self:_addRefinement(function(value)
+    return true, fn(value)
+  end)
 end
 
 function CBaseValidator:optional()
@@ -125,6 +141,7 @@ return {
     __check = checkFn,
 
     __refinements = {},
+    __preprocessors = {},
 
     __optional = false,
     __nullable = false,

@@ -17,7 +17,7 @@ local function sortedKeys(value)
   return keys
 end
 
-local function objectCheck(schema, strict)
+local function objectCheck(schema, unknownKeys)
   return function(value, path, collect)
     if type(value) ~= "table" then
       return false, helpers.issue(path, "invalid_type", ("expected object (table), got %s"):format(type(value)), "object", type(value))
@@ -30,7 +30,7 @@ local function objectCheck(schema, strict)
 
     local errors = {}
 
-    if strict then
+    if unknownKeys == "strict" then
       for _, key in ipairs(sortedKeys(value)) do
         if schema[key] == nil then
           local fieldIssue = helpers.issue(path, "unrecognized_key", ("unknown key '%s' (strict mode)"):format(tostring(key)), "known key", key)
@@ -55,7 +55,7 @@ local function objectCheck(schema, strict)
 
     if #errors > 0 then return false, errors end
 
-    if not strict then
+    if unknownKeys == "passthrough" then
       for key, fieldValue in pairs(value) do
         if schema[key] == nil then out[key] = fieldValue end
       end
@@ -74,17 +74,31 @@ local function newObject(schema, opts)
   end
 
   opts = opts or {}
-  local strict = opts.strict or false
-  local self = newValidator("object", objectCheck(schema, strict))
+  local unknownKeys = opts.unknownKeys or "passthrough"
+  local self = newValidator("object", objectCheck(schema, unknownKeys))
   self.__schema = schema
-  self.__strict = strict
+  self.__unknownKeys = unknownKeys
   return setmetatable(self, CObjectValidator)
 end
 
 function CObjectValidator:strict()
   local clone = self:_clone()
-  clone.__strict = true
-  clone.__check = objectCheck(clone.__schema, true)
+  clone.__unknownKeys = "strict"
+  clone.__check = objectCheck(clone.__schema, "strict")
+  return clone
+end
+
+function CObjectValidator:strip()
+  local clone = self:_clone()
+  clone.__unknownKeys = "strip"
+  clone.__check = objectCheck(clone.__schema, "strip")
+  return clone
+end
+
+function CObjectValidator:passthrough()
+  local clone = self:_clone()
+  clone.__unknownKeys = "passthrough"
+  clone.__check = objectCheck(clone.__schema, "passthrough")
   return clone
 end
 
@@ -92,7 +106,7 @@ function CObjectValidator:extend(extraSchema)
   local merged = {}
   for key, value in pairs(self.__schema) do merged[key] = value end
   for key, value in pairs(extraSchema) do merged[key] = value end
-  return newObject(merged)
+  return newObject(merged, { unknownKeys = self.__unknownKeys })
 end
 
 function CObjectValidator:pick(keys)
@@ -100,7 +114,7 @@ function CObjectValidator:pick(keys)
   for _, key in ipairs(keys) do
     if self.__schema[key] then subKeys[key] = self.__schema[key] end
   end
-  return newObject(subKeys)
+  return newObject(subKeys, { unknownKeys = self.__unknownKeys })
 end
 
 function CObjectValidator:omit(keys)
@@ -111,7 +125,7 @@ function CObjectValidator:omit(keys)
   for key, value in pairs(self.__schema) do
     if not exclude[key] then subKeys[key] = value end
   end
-  return newObject(subKeys)
+  return newObject(subKeys, { unknownKeys = self.__unknownKeys })
 end
 
 return newObject

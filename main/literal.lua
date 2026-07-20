@@ -11,5 +11,6 @@ return function(expected)
     return true, value
   end)
   self.__label = label
+  self.__value = expected
   return self
 end

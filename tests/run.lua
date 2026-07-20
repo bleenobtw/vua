@@ -95,6 +95,27 @@ test("optional nullable and default values", function()
   rejects(v.string(), nil, "[<root>] expected string, got nil")
 end)
 
+test("preprocess and transform values", function()
+  local schema = v.string()
+    :preprocess(function(value) return tostring(value) end)
+    :transform(function(value) return value .. "!" end)
+    :startsWith("4")
+
+  parses(schema, 42, "42!")
+  parses(v.number():transform(function(value) return value * 2 end), 4, 8)
+
+  local ok = pcall(function() v.string():transform("upper") end)
+  equal(ok, false)
+end)
+
+test("coercion schemas", function()
+  parses(v.coerce.string(), 42, "42")
+  parses(v.coerce.number(), "42.5", 42.5)
+  parses(v.coerce.boolean(), "true", true)
+  parses(v.coerce.boolean(), 0, false)
+  rejects(v.coerce.number(), "nope", "[<root>] expected number, got string")
+end)
+
 test("safeParse and assert", function()
   equal(v.number():safeParse(5), { success = true, data = 5 })
   equal(v.number():safeParse("5"), {
@@ -176,6 +197,14 @@ test("literal and enum validators", function()
   parses(v.enum({true, false}), false, false)
 end)
 
+test("any unknown and never validators", function()
+  parses(v.any(), nil, nil)
+  parses(v.any(), { value = true }, { value = true })
+  parses(v.unknown(), false, false)
+  rejects(v.never(), false, "[<root>] expected never, got boolean")
+  rejects(v.never(), nil, "[<root>] expected never, got nil")
+end)
+
 test("objects parse fields and preserve unknown keys", function()
   local schema = v.object({
     name = v.string():upper(),
@@ -212,6 +241,22 @@ test("strict and derived objects", function()
   })
 end)
 
+test("object unknown key modes", function()
+  local player = v.object({ name = v.string() })
+  parses(player:passthrough(), { name = "Martin", role = "user" }, { name = "Martin", role = "user" })
+  parses(player:strip(), { name = "Martin", role = "user" }, { name = "Martin" })
+  rejects(player:strict(), { name = "Martin", role = "user" }, "[<root>] unknown key 'role' (strict mode)")
+  parses(player, { name = "Martin", role = "user" }, { name = "Martin", role = "user" })
+  parses(player:strip():extend({ age = v.number() }), {
+    name = "Martin",
+    age = 20,
+    role = "user",
+  }, {
+    name = "Martin",
+    age = 20,
+  })
+end)
+
 test("nested object paths", function()
   local schema = v.object({
     player = v.object({
@@ -237,6 +282,26 @@ test("arrays must be dense and use integer keys", function()
   rejects(v.array(v.number()), { [0] = 1 }, "[<root>] expected array, got table with non-array keys")
 end)
 
+test("tuple validators", function()
+  local schema = v.tuple({v.string():upper(), v.number():int()})
+  parses(schema, {"vua", 2}, {"VUA", 2})
+  rejects(schema, {"vua"}, "[<root>] tuple must have exactly 2 element(s), got 1")
+
+  local result = schema:safeParse({false, 1.5})
+  equal(#result.issues, 2)
+  equal(result.issues[1].path, {"1"})
+end)
+
+test("record validators", function()
+  parses(v.record(v.number()), { one = 1, two = 2 }, { one = 1, two = 2 })
+  parses(v.record(v.string():upper(), v.number():transform(function(value) return value * 2 end)), {
+    one = 1,
+  }, {
+    ONE = 2,
+  })
+  rejects(v.record(v.number()), { one = "1" }, "[one] expected number, got string")
+end)
+
 test("objects and raw tables have distinct semantics", function()
   rejects(v.object({ value = v.number() }), {1}, "[<root>] expected object, got array")
   parses(v.object({ value = v.number() }), { value = 1 }, { value = 1 })
@@ -257,6 +322,18 @@ test("schema constructors reject invalid arguments", function()
     function() v.intersection(v.string(), "number") end,
     function() v.lazy("schema") end,
     function() v.lazy(function() return "schema" end):parse(1) end,
+    function() v.tuple("schemas") end,
+    function() v.tuple({v.string(), "number"}) end,
+    function() v.record("number") end,
+    function() v.discriminatedUnion(1, {}) end,
+    function() v.discriminatedUnion("type", {v.string()}) end,
+    function() v.discriminatedUnion("type", {v.object({ value = v.string() })}) end,
+    function()
+      v.discriminatedUnion("type", {
+        v.object({ type = v.literal("same") }),
+        v.object({ type = v.literal("same") }),
+      })
+    end,
   }
 
   for _, fn in ipairs(invalid) do
@@ -270,6 +347,18 @@ test("unions", function()
   parses(schema, "vua", "vua")
   parses(schema, 42, 42)
   rejects(schema, false, "[<root>] value matched none of [string | number]")
+end)
+
+test("discriminated unions", function()
+  local schema = v.discriminatedUnion("type", {
+    v.object({ type = v.literal("car"), doors = v.number():int() }),
+    v.object({ type = v.enum({"bike", "motorcycle"}), wheels = v.number():int() }),
+  })
+
+  parses(schema, { type = "car", doors = 4 }, { type = "car", doors = 4 })
+  parses(schema, { type = "bike", wheels = 2 }, { type = "bike", wheels = 2 })
+  rejects(schema, { type = "boat" }, "[type] expected one of [car | bike | motorcycle], got 'boat'")
+  rejects(schema, { type = "car", doors = 4.5 }, "[doors] expected integer, got float 4.5")
 end)
 
 test("intersections", function()
