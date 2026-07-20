@@ -6,36 +6,33 @@ local CArrayValidator = setmetatable({}, { __index = CBaseValidator })
 CArrayValidator.__index = CArrayValidator
 
 function CArrayValidator:min(n, message)
-  table.insert(self.__refinements, function(value, path)
+  return self:_addRefinement(function(value, path)
     if #value < n then
       return false, message or ("[%s] array must have at least %d element(s), got %d")
         :format(helpers.pathToString(path), n, #value)
     end
     return true, value
   end)
-  return self
 end
 
 function CArrayValidator:max(n, message)
-  table.insert(self.__refinements, function(value, path)
+  return self:_addRefinement(function(value, path)
     if #value > n then
       return false, message or ("[%s] array must have at most %d element(s), got %d")
         :format(helpers.pathToString(path), n, #value)
     end
     return true, value
   end)
-  return self
 end
 
 function CArrayValidator:length(n, message)
-  table.insert(self.__refinements, function(value, path)
+  return self:_addRefinement(function(value, path)
     if #value ~= n then
       return false, message or ("[%s] array must have exactly %d element(s), got %d")
         :format(helpers.pathToString(path), n, #value)
     end
     return true, value
   end)
-  return self
 end
 
 function CArrayValidator:nonEmpty(message)

@@ -112,6 +112,7 @@ String patterns use [Lua patterns](https://www.lua.org/manual/5.4/manual.html#6.
 Every schema supports `optional`, `nullable`, `default`, `label`, and `refine`.
 
 Objects preserve unknown keys by default. Call `strict` to reject them.
+Schema methods return a new schema, so a base schema can be safely reused in multiple chains.
 
 ## Development
 
