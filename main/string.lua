@@ -1,4 +1,5 @@
-local CBaseValidator, newValidator = table.unpack(require "main.base")
+local base = require "main.base"
+local CBaseValidator, newValidator = table.unpack(base)
 local helpers = require "main.helpers"
 
 local CStringValidator = setmetatable({}, { __index = CBaseValidator })
@@ -52,7 +53,10 @@ end
 ---@param message string # The message to return if this validator fails.
 function CStringValidator:pattern(pattern, message)
   table.insert(self.__refinements, function(value, path)
-    return true, value:match("^%s*(.-)%s*$")
+    if not value:match(pattern) then
+      return false, message or ("[%s] string must match pattern '%s'"):format(helpers.pathToString(path), pattern)
+    end
+    return true, value
   end)
   return self
 end
@@ -105,7 +109,7 @@ end
 function CStringValidator:includes(subString, message)
   table.insert(self.__refinements, function(value, path)
     if not value:find(subString, 1, true) then
-      return false, ("[%s] string must include '%s'"):format(helpers.pathToString(path), subString)
+      return false, message or ("[%s] string must include '%s'"):format(helpers.pathToString(path), subString)
     end
     return true, value
   end)

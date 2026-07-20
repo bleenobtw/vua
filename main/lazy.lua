@@ -1,5 +1,5 @@
-local _, newValidator = table.unpack(require "main.base")
-local helpers = require "main.helpers"
+local base = require "main.base"
+local _, newValidator = table.unpack(base)
 
 return function(fn)
   return newValidator("lazy", function(value, path)
