@@ -77,6 +77,8 @@ print(result.success, result.error)
 local name = v.string():nonEmpty():assert("Martin")
 ```
 
+Failed `safeParse` results also contain an `issues` array. Each issue includes `path`, `code`, and `message`, with `expected` and `received` values when they apply. Object and array schemas collect all child issues in this mode; `parse` still returns the first formatted error.
+
 Nested failures include their field path:
 
 ```lua

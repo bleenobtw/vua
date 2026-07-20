@@ -7,10 +7,10 @@ return function(a, b)
   helpers.assertValidator(b, "right intersection value")
 
   return newValidator("intersection", function(value, path)
-    local okA, resultsA = a:parse(value, path)
+    local okA, resultsA = a:_parse(value, path, false)
     if not okA then return false, resultsA end
 
-    local okB, resultsB = b:parse(value, path)
+    local okB, resultsB = b:_parse(value, path, false)
     if not okB then return false, resultsB end
 
     if a.__type == "object" and b.__type == "object" then

@@ -11,7 +11,7 @@ CStringValidator.__index = CStringValidator
 function CStringValidator:min(n, message)
   return self:_addRefinement(function(value, path)
     if #value < n then
-      return false, message or ("[%s] string must be at least %d character(s), got %d"):format(helpers.pathToString(path), n, #value)
+      return false, helpers.issue(path, "too_small", message or ("string must be at least %d character(s), got %d"):format(n, #value), n, #value)
     end
     return true, value
   end)
@@ -23,7 +23,7 @@ end
 function CStringValidator:max(n, message)
   return self:_addRefinement(function(value, path)
     if #value > n then
-      return false, message or ("[%s] string must be at most %d character(s), got %d"):format(helpers.pathToString(path), n, #value)
+      return false, helpers.issue(path, "too_big", message or ("string must be at most %d character(s), got %d"):format(n, #value), n, #value)
     end
     return true, value
   end)
@@ -39,7 +39,7 @@ end
 function CStringValidator:length(n, message)
   return self:_addRefinement(function(value, path)
     if #value ~= n then
-      return false, message or ("[%s] string must be exactly %d character(s), got %d"):format(helpers.pathToString(path), n, #value)
+      return false, helpers.issue(path, "invalid_length", message or ("string must be exactly %d character(s), got %d"):format(n, #value), n, #value)
     end
     return true, value
   end)
@@ -51,7 +51,7 @@ end
 function CStringValidator:pattern(pattern, message)
   return self:_addRefinement(function(value, path)
     if not value:match(pattern) then
-      return false, message or ("[%s] string must match pattern '%s'"):format(helpers.pathToString(path), pattern)
+      return false, helpers.issue(path, "invalid_string", message or ("string must match pattern '%s'"):format(pattern), pattern, value)
     end
     return true, value
   end)
@@ -77,7 +77,7 @@ end
 function CStringValidator:startsWith(prefix, message)
   return self:_addRefinement(function(value, path)
     if value:sub(1, #prefix) ~= prefix then
-      return false, message or ("[%s] string must start with '%s'"):format(helpers.pathToString(path), prefix)
+      return false, helpers.issue(path, "invalid_string", message or ("string must start with '%s'"):format(prefix), prefix, value)
     end
     return true, value
   end)
@@ -89,7 +89,7 @@ end
 function CStringValidator:endsWith(suffix, message)
   return self:_addRefinement(function(value, path)
     if value:sub(-#suffix) ~= suffix then
-      return false, message or ("[%s] string must end with '%s'"):format(helpers.pathToString(path), suffix)
+      return false, helpers.issue(path, "invalid_string", message or ("string must end with '%s'"):format(suffix), suffix, value)
     end
     return true, value
   end)
@@ -101,7 +101,7 @@ end
 function CStringValidator:includes(subString, message)
   return self:_addRefinement(function(value, path)
     if not value:find(subString, 1, true) then
-      return false, message or ("[%s] string must include '%s'"):format(helpers.pathToString(path), subString)
+      return false, helpers.issue(path, "invalid_string", message or ("string must include '%s'"):format(subString), subString, value)
     end
     return true, value
   end)
@@ -111,7 +111,7 @@ return function()
   return setmetatable(
     newValidator("string", function(value, path)
       if type(value) ~= "string" then
-        return false, ("[%s] expected string, got %s"):format(helpers.pathToString(path), type(value))
+        return false, helpers.issue(path, "invalid_type", ("expected string, got %s"):format(type(value)), "string", type(value))
       end
       return true, value
     end)

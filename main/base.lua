@@ -3,40 +3,50 @@ CBaseValidator.__index = CBaseValidator
 
 local helpers = require "main.helpers"
 
-function CBaseValidator:parse(value, path)
+function CBaseValidator:_parse(value, path, collect)
   if path == nil then path = {} elseif type(path) ~= "table" then path = { path } end
 
   if value == nil then
     if self.__hasDefault then value = self.__default end
     if value == nil and (self.__optional or self.__nullable) then return true, nil end
     if value == nil then
-      return false, ("[%s] expected %s, got nil"):format(helpers.pathToString(path), self.__label)
+      return false, { helpers.issue(path, "invalid_type", ("expected %s, got nil"):format(self.__label), self.__label, "nil") }
     end
   end
 
   if value == nil and self.__nullable then return true, nil end
 
-  local ok, result = self.__check(value, path)
-  if not ok then return false, result end
+  local ok, result = self.__check(value, path, collect)
+  if not ok then return false, helpers.issues(result) end
   value = result  -- ← use the processed result (the `out` table for objects)
 
   for _, ref in ipairs(self.__refinements) do
     local refOk, refResult = ref(value, path)
-    if not refOk then return false, refResult end
+    if not refOk then return false, helpers.issues(refResult) end
     value = refResult  -- ← pick up transforms like .upper(), .trim()
   end
 
   return true, value
 end
 
+function CBaseValidator:parse(value, path)
+  local ok, result = self:_parse(value, path, false)
+  if not ok then return false, helpers.formatIssue(result[1]) end
+  return true, result
+end
+
 -- Safe parsing, returns { success: boolean, value|error }
 function CBaseValidator:safeParse(value, path)
-  local ok, result = self:parse(value, path)
+  local ok, result = self:_parse(value, path, true)
 
   if ok then
     return { success = true, data = result }
   else
-    return { success = false, error = result }
+    return {
+      success = false,
+      error = helpers.formatIssue(result[1]),
+      issues = result,
+    }
   end
 end
 
@@ -101,7 +111,7 @@ function CBaseValidator:refine(fn, message)
     local ok, customErr = fn(value)
 
     if not ok then
-      return false, ("[%s] %s"):format(helpers.pathToString(path), customErr or message or "custom validation failed")
+      return false, helpers.issue(path, "custom", customErr or message or "custom validation failed")
     end
     return true, value
   end)

@@ -6,7 +6,7 @@ return function(expected)
   local label = tostring(expected)
   local self = newValidator(("literal(%s)"):format(label), function(value, path)
     if value ~= expected then
-      return false, ("[%s] expected literal %s, got %s"):format(helpers.pathToString(path), label, tostring(value))
+      return false, helpers.issue(path, "invalid_literal", ("expected literal %s, got %s"):format(label, tostring(value)), expected, value)
     end
     return true, value
   end)
