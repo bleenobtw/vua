@@ -1,28 +1,9 @@
-local CBaseValidator, newValidator = table.unpack(require "main.base")
+local base = require "main.base"
+local CBaseValidator, newValidator = table.unpack(base)
+local helpers = require "main.helpers"
 
 local CObjectValidator = setmetatable({}, { __index = CBaseValidator })
 CObjectValidator.__index = CObjectValidator
-
-local function pathToString(path)
-  if type(path) == "table" then
-    return table.concat(path, ".")
-  end
-  return tostring(path or "")
-end
-
-local function extendPath(path, key)
-  if type(path) ~= "table" then
-    path = path and { path } or {}
-  end
-
-  local newPath = {}
-  for i = 1, #path do
-    newPath[i] = path[i]
-  end
-
-  newPath[#newPath + 1] = tostring(key)
-  return newPath
-end
 
 local function newObject(schema, opts)
   opts = opts or {}
@@ -31,21 +12,21 @@ local function newObject(schema, opts)
   local self = newValidator("object", function(value, path)
     if type(value) ~= "table" then
       return false, ("[%s] expected object (table), got %s")
-        :format(pathToString(path), type(value))
+        :format(helpers.pathToString(path), type(value))
     end
 
     -- strict mode, reject unknown keys
     if strict then
       for key in pairs(value) do
         if schema[key] == nil then
-          return false, ("[%s] unknown key '%s' (struct mode)"):format(path, tostring(key))
+          return false, ("[%s] unknown key '%s' (strict mode)"):format(helpers.pathToString(path), tostring(key))
         end
       end
     end
 
     local out = {}
     for key, validator in pairs(schema) do
-      local fieldPath = extendPath(path, key)
+      local fieldPath = helpers.extendPath(path, key)
       local ok, results = validator:parse(value[key], fieldPath)
 
       if not ok then return false, results end
@@ -68,12 +49,12 @@ function CObjectValidator:strict()
   local previous = self.__check
   self.__check = function(value, path)
     if type(value) ~= "table" then
-      return false, ("[%s] expected object (table), got %s"):format(pathToString(path), tostring(key))
+      return false, ("[%s] expected object (table), got %s"):format(helpers.pathToString(path), type(value))
     end
 
     for key in pairs(value) do
       if self.__schema[key] == nil then
-        return false, ("[%s] unknown key '%s' (strict mode)"):format(pathToString(path), tostring(key))
+        return false, ("[%s] unknown key '%s' (strict mode)"):format(helpers.pathToString(path), tostring(key))
       end
     end
     return previous(value, path)

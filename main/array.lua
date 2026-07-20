@@ -1,4 +1,5 @@
-local CBaseValidator, newValidator = table.unpack(require "main.base")
+local base = require "main.base"
+local CBaseValidator, newValidator = table.unpack(base)
 local helpers = require "main.helpers"
 
 local CArrayValidator = setmetatable({}, { __index = CBaseValidator })
@@ -44,13 +45,13 @@ end
 return function(itemValidator)
   return setmetatable(
     newValidator("array", function(value, path)
-      if type(value) ~= table then
-        return false, ("[%] expected array (table), got %s"):format(helpers.pathToString(path), type(value))
+      if type(value) ~= "table" then
+        return false, ("[%s] expected array (table), got %s"):format(helpers.pathToString(path), type(value))
       end
 
       local outResults = {}
       for j, item in ipairs(value) do
-        local itemPath = path .. "[" .. i .. "]"
+        local itemPath = helpers.extendPath(path, j)
         local ok, result = itemValidator:parse(item, itemPath)
 
         if not ok then return false, result end

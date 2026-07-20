@@ -1,4 +1,5 @@
-local CBaseValidator, newValidator = table.unpack(require "main.base")
+local base = require "main.base"
+local CBaseValidator, newValidator = table.unpack(base)
 local helpers = require "main.helpers"
 
 local CNumberValidator = setmetatable({}, { __index = CBaseValidator })
@@ -27,7 +28,7 @@ end
 function CNumberValidator:gt(n, message)
   table.insert(self.__refinements, function(value, path)
     if value <= n then
-      return false, message or ("[%s] number must be < %s, got %s"):format(helpers.pathToString(path), n, value)
+      return false, message or ("[%s] number must be > %s, got %s"):format(helpers.pathToString(path), n, value)
     end
     return true, value
   end)
@@ -44,7 +45,7 @@ function CNumberValidator:lt(n, message)
   return self
 end
 
-function CNumberValidator:int(n, message)
+function CNumberValidator:int(message)
   table.insert(self.__refinements, function(value, path)
     if value ~= math.floor(value) then
       return false, message or ("[%s] expected integer, got float %s"):format(helpers.pathToString(path), value)
@@ -54,7 +55,7 @@ function CNumberValidator:int(n, message)
   return self
 end
 
-function CNumberValidator:positive(n, message)
+function CNumberValidator:positive(message)
   table.insert(self.__refinements, function(value, path)
     if value <= 0 then
       return false, message or ("[%s] number must be positive, got %s"):format(helpers.pathToString(path), value)
@@ -64,7 +65,7 @@ function CNumberValidator:positive(n, message)
   return self
 end
 
-function CNumberValidator:negative(n, message)
+function CNumberValidator:negative(message)
   table.insert(self.__refinements, function(value, path)
     if value >= 0 then
       return false, message or ("[%s] number must be negative, got %s"):format(helpers.pathToString(path), value)
