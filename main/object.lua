@@ -46,20 +46,23 @@ local function newObject(schema, opts)
 end
 
 function CObjectValidator:strict()
-  local previous = self.__check
-  self.__check = function(value, path)
+  local clone = self:_clone()
+  local previous = clone.__check
+  local schema = clone.__schema
+
+  clone.__check = function(value, path)
     if type(value) ~= "table" then
       return false, ("[%s] expected object (table), got %s"):format(helpers.pathToString(path), type(value))
     end
 
     for key in pairs(value) do
-      if self.__schema[key] == nil then
+      if schema[key] == nil then
         return false, ("[%s] unknown key '%s' (strict mode)"):format(helpers.pathToString(path), tostring(key))
       end
     end
     return previous(value, path)
   end
-  return self
+  return clone
 end
 
 function CObjectValidator:extend(extraSchema)

@@ -115,6 +115,22 @@ test("labels and custom refinements", function()
   end, "number must be even"), 3, "[<root>] number must be even")
 end)
 
+test("schema chains do not mutate their source", function()
+  local baseString = v.string()
+  local optionalString = baseString:optional()
+  local upperString = baseString:upper()
+
+  rejects(baseString, nil, "[<root>] expected string, got nil")
+  parses(optionalString, nil, nil)
+  parses(baseString, "vua", "vua")
+  parses(upperString, "vua", "VUA")
+
+  local player = v.object({ name = v.string() })
+  local strictPlayer = player:strict()
+  parses(player, { name = "Martin", extra = true }, { name = "Martin", extra = true })
+  rejects(strictPlayer, { name = "Martin", extra = true }, "[<root>] unknown key 'extra' (strict mode)")
+end)
+
 test("literal and enum validators", function()
   parses(v.literal(true), true, true)
   rejects(v.literal(true), false, "[<root>] expected literal true, got false")

@@ -49,29 +49,55 @@ function CBaseValidator:assert(value, path)
   return result
 end
 
+function CBaseValidator:_clone()
+  local clone = {}
+
+  for key, value in pairs(self) do
+    if key == "__refinements" then
+      local refinements = {}
+      for i = 1, #value do refinements[i] = value[i] end
+      clone[key] = refinements
+    else
+      clone[key] = value
+    end
+  end
+
+  return setmetatable(clone, getmetatable(self))
+end
+
+function CBaseValidator:_addRefinement(refinement)
+  local clone = self:_clone()
+  table.insert(clone.__refinements, refinement)
+  return clone
+end
+
 function CBaseValidator:optional()
-  self.__optional = true
-  return self
+  local clone = self:_clone()
+  clone.__optional = true
+  return clone
 end
 
 function CBaseValidator:nullable()
-  self.__nullable = true
-  return self
+  local clone = self:_clone()
+  clone.__nullable = true
+  return clone
 end
 
 function CBaseValidator:default(value)
-  self.__hasDefault = true
-  self.__default = value
-  return self
+  local clone = self:_clone()
+  clone.__hasDefault = true
+  clone.__default = value
+  return clone
 end
 
 function CBaseValidator:label(label)
-  self.__label = label
-  return self
+  local clone = self:_clone()
+  clone.__label = label
+  return clone
 end
 
 function CBaseValidator:refine(fn, message)
-  table.insert(self.__refinements, function(value, path)
+  return self:_addRefinement(function(value, path)
     local ok, customErr = fn(value)
 
     if not ok then
@@ -79,7 +105,6 @@ function CBaseValidator:refine(fn, message)
     end
     return true, value
   end)
-  return self
 end
 
 return {
