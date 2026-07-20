@@ -103,17 +103,22 @@ String patterns use [Lua patterns](https://www.lua.org/manual/5.4/manual.html#6.
 | `boolean()` | Base helpers |
 | `func()` | Base helpers |
 | `table()` | Base helpers |
+| `any()` / `unknown()` / `never()` | Base helpers |
 | `literal(value)` | Base helpers |
 | `enum(values)` | Base helpers |
-| `object(shape)` | `strict`, `extend`, `pick`, `omit` |
+| `object(shape)` | `strict`, `strip`, `passthrough`, `extend`, `pick`, `omit` |
 | `array(schema)` | `min`, `max`, `length`, `nonEmpty` |
+| `record([keySchema,] valueSchema)` | Base helpers |
+| `tuple(schemas)` | Base helpers |
 | `union(schemas)` | Base helpers |
+| `discriminatedUnion(key, schemas)` | Base helpers |
 | `intersection(left, right)` | Base helpers |
 | `lazy(factory)` | Base helpers |
+| `coerce.string()` / `coerce.number()` / `coerce.boolean()` | Type-specific helpers |
 
-Every schema supports `optional`, `nullable`, `default`, `label`, and `refine`.
+Every schema supports `optional`, `nullable`, `default`, `label`, `refine`, `preprocess`, and `transform`.
 
-Objects preserve unknown keys by default. Call `strict` to reject them.
+Objects preserve unknown keys by default. Call `strict` to reject them or `strip` to remove them from the parsed result.
 Schema methods return a new schema, so a base schema can be safely reused in multiple chains.
 
 Arrays must be dense, 1-based tables with no non-integer keys. Objects reject non-empty array-shaped tables; use `table()` when either table shape is valid.
