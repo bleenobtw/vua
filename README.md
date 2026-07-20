@@ -40,6 +40,11 @@ local v = require "@vua/main.validate"
 
 If the resource directory is renamed, use that name in both `dependencies` and the import path.
 
+## Documentation
+
+- [Usage guide](docs/USAGE.md): FiveM events, NUI callbacks, commands, schema composition, transformations, and error handling.
+- [API reference](docs/API.md): every constructor, method, parse result, coercion rule, and validation issue.
+
 ## Usage
 
 ```lua
