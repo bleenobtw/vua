@@ -10,5 +10,3 @@ shared_script "@ox_lib/init.lua"
 files {
   "main/validate.lua",
 }
-
-server_script "main/__tests.lua"
